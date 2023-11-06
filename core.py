@@ -7,7 +7,7 @@ import pyautogui
 
 
 class Core:
-    def __init__(self, chunk=1024, sample_format=pyaudio.paInt16, channels=1, fs=44100, filename="output.wav", device_index=5, url="", headers="", initial_chat_prompt=""):
+    def __init__(self, chunk=1024, sample_format=pyaudio.paInt16, channels=1, fs=44100, filename="output.wav", device_index=0):
         self.chunk = chunk
         self.sample_format = sample_format
         self.channels = channels
@@ -20,9 +20,6 @@ class Core:
         self.device_index = device_index  # Store the device index
         self.key_pressed = ""
         self.llm = None
-        self.url = url
-        self.headers = headers
-        self.initial_chat_prompt = initial_chat_prompt
 
     def list_devices(self):
         info = self.p.get_host_api_info_by_index(0)

@@ -1,12 +1,13 @@
 import subprocess
 import re
 import sys
-
+import imageio
+import base64
 
 class VideoCapture:
-    def __init__(self, url, headers) -> None:
-        self.url = url
-        self.headers = headers
+    def __init__(self) -> None:
+        self.capture = None
+
 
     def get_video_devices(self):
         command = ["ffmpeg", "-f", "avfoundation", "-list_devices", "true", "-i", ""]
@@ -29,3 +30,11 @@ class VideoCapture:
         else:
             print("Invalid index selected.")
             sys.exit(1)
+
+
+    def get_encoded_image(self):
+        frame = self.capture.get_next_data()
+        imageio.imsave('temp.png', frame)
+        with open('temp.png', 'rb') as file:
+            encoded_string = base64.b64encode(file.read()).decode('utf-8')
+        return encoded_string

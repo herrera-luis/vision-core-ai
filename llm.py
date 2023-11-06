@@ -1,7 +1,5 @@
 import requests
 import json
-import base64
-import imageio
 import requests
 import json
 
@@ -41,10 +39,7 @@ class Llm:
 
 
     def call_image(self, query):
-        frame = self.video_capture.get_next_data()
-        imageio.imsave('temp.png', frame)
-        with open('temp.png', 'rb') as file:
-            encoded_string = base64.b64encode(file.read()).decode('utf-8')
+        encoded_string = self.video_capture.get_encoded_image()
         image_data = [{"data": encoded_string, "id": 12}]
         data = {"prompt": f"USER:[img-12] {query} \nASSISTANT:", "n_predict": -1, "image_data": image_data, "stream": True}
         response = requests.post(self.url, headers=self.headers, json=data, stream=True)

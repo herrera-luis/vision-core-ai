@@ -16,34 +16,34 @@ print("Starting vision-core-ai...")
 
 def main():
     ########## Video menu ##########
-    video = VideoCapture(url, headers)
-    devices = video.get_video_devices()
+    video_capture = VideoCapture()
+    devices = video_capture.get_video_devices()
     if not devices:
         print("No video devices found.")
         sys.exit(1)
     
-    index = video.select_video_device(devices)
+    index = video_capture.select_video_device(devices)
     print(f">You selected: {devices[index]}")
-    video_capture = imageio.get_reader(f"<video{index}>")
+    video_capture.capture = imageio.get_reader(f"<video{index}>")
     #################################
 
 
     ########## Audio menu ##########
     print("\n*******************************\n")
-    recorder = Core(url=url, headers=headers, initial_chat_prompt=initial_chat_prompt)
+    core = Core()
     print("Available audio devices:\n")
-    recorder.list_devices()
+    core.list_devices()
     chosen_device_index = int(input("Enter the audio device index: "))
-    print(f">You selected: {recorder.p.get_device_info_by_host_api_device_index(0, chosen_device_index).get('name')}\n\n")
-    recorder.device_index = chosen_device_index
+    print(f">You selected: {core.p.get_device_info_by_host_api_device_index(0, chosen_device_index).get('name')}\n\n")
+    core.device_index = chosen_device_index
     #################################
 
     ########## LLM setup ##############
     llm = Llm(video_capture, url, headers, initial_chat_prompt)
     ###################################
 
-    recorder.set_hotkey()
-    recorder.llm = llm
+    core.set_hotkey()
+    core.llm = llm
     print('Press Ctrl-C to quit')
 
     print("\nvision-core-ai listening...")
