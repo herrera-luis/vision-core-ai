@@ -1,0 +1,10 @@
+pyaudio
+wave
+pynput
+openai-whisper
+pyautogui
+argparse
+requests
+imageio[ffmpeg]
+imageio-ffmpeg
+imageio
