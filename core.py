@@ -4,12 +4,9 @@ import threading
 from pynput import keyboard
 import whisper
 import pyautogui
-import requests
-import json
-import re
 
 
-class AudioRecorder:
+class Core:
     def __init__(self, chunk=1024, sample_format=pyaudio.paInt16, channels=1, fs=44100, filename="output.wav", device_index=5, url="", headers="", initial_chat_prompt=""):
         self.chunk = chunk
         self.sample_format = sample_format
@@ -22,7 +19,7 @@ class AudioRecorder:
         self.p = pyaudio.PyAudio()
         self.device_index = device_index  # Store the device index
         self.key_pressed = ""
-        self.video_capture = None
+        self.llm = None
         self.url = url
         self.headers = headers
         self.initial_chat_prompt = initial_chat_prompt
@@ -74,9 +71,9 @@ class AudioRecorder:
         recording_text = self.transcribe_recording()
         pyautogui.write(f'\nUser >{recording_text}\n')
         if self.key_pressed == "'i'":
-            self.video_capture.capture_image(recording_text)
+            self.llm.call_image(recording_text)
         else:
-            self.call_llm(recording_text)
+            self.llm.call_chat(recording_text)
         self.key_pressed = ""
 
     def set_hotkey(self):
@@ -91,35 +88,3 @@ class AudioRecorder:
         listener = keyboard.Listener(
             on_press=on_press)
         listener.start()
-
-
-    def call_llm(self, query):
-        data = {"prompt": f"{self.initial_chat_prompt}\n\nUSER:{query} \nASSISTANT:", "n_predict": -1, "cache_prompt": True, "stream": True,
-                "stop": [
-                            "</s>",
-                            "ASSISTANT:",
-                            "USER:"
-                        ],
-                }
-
-        response = requests.post(self.url, headers=self.headers, json=data, stream=True)
-
-        print("core-ai | thinking...")
-
-        with open("output.txt", "a") as write_file:
-            write_file.write("\n\n"+"---------------------"+ "\n\n")
-
-        
-        for chunk in response.iter_content(chunk_size=3000):
-            with open("output.txt", "a") as write_file:
-                content = chunk.decode().strip().split('\n\n')[0]
-                try:
-                    content_split = content.split('data: ')
-                    if len(content_split) > 1:
-                        content_json = json.loads(content_split[1])
-                        write_file.write(content_json["content"])
-                        print(content_json["content"], end='', flush=True)
-                    write_file.flush()  # Save the file after every chunk
-                except json.JSONDecodeError as e:
-                    print(f"JSONDecodeError: {e}")
-        print("\n\n"+"---------------------"+ "\n\n")

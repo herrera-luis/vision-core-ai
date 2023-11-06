@@ -3,7 +3,8 @@ import imageio
 import time
 import warnings
 from video_capture import VideoCapture
-from audio_recorder import AudioRecorder
+from core import Core
+from llm import Llm
 
 # Suppress specific warnings from the Whisper library
 warnings.filterwarnings('ignore', message='FP16 is not supported on CPU; using FP32 instead')
@@ -14,7 +15,6 @@ print("Starting vision-core-ai...")
 
 
 def main():
-
     ########## Video menu ##########
     video = VideoCapture(url, headers)
     devices = video.get_video_devices()
@@ -24,13 +24,13 @@ def main():
     
     index = video.select_video_device(devices)
     print(f">You selected: {devices[index]}")
-    video.cap = imageio.get_reader(f"<video{index}>")
+    video_capture = imageio.get_reader(f"<video{index}>")
     #################################
 
 
     ########## Audio menu ##########
     print("\n*******************************\n")
-    recorder = AudioRecorder(url=url, headers=headers, initial_chat_prompt=initial_chat_prompt)
+    recorder = Core(url=url, headers=headers, initial_chat_prompt=initial_chat_prompt)
     print("Available audio devices:\n")
     recorder.list_devices()
     chosen_device_index = int(input("Enter the audio device index: "))
@@ -38,8 +38,12 @@ def main():
     recorder.device_index = chosen_device_index
     #################################
 
+    ########## LLM setup ##############
+    llm = Llm(video_capture, url, headers, initial_chat_prompt)
+    ###################################
+
     recorder.set_hotkey()
-    recorder.video_capture = video
+    recorder.llm = llm
     print('Press Ctrl-C to quit')
 
     print("\nvision-core-ai listening...")

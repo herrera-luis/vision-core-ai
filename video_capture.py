@@ -1,15 +1,10 @@
 import subprocess
 import re
-import base64
-import imageio
 import sys
-import requests
-import json
 
 
 class VideoCapture:
     def __init__(self, url, headers) -> None:
-        self.cap = None
         self.url = url
         self.headers = headers
 
@@ -34,31 +29,3 @@ class VideoCapture:
         else:
             print("Invalid index selected.")
             sys.exit(1)
-
-    def capture_image(self, instruction):
-        frame = self.cap.get_next_data()
-        imageio.imsave('temp.png', frame)
-        with open('temp.png', 'rb') as file:
-            encoded_string = base64.b64encode(file.read()).decode('utf-8')
-        image_data = [{"data": encoded_string, "id": 12}]
-        data = {"prompt": f"USER:[img-12] {instruction} \nASSISTANT:", "n_predict": -1, "image_data": image_data, "stream": True}
-        response = requests.post(self.url, headers=self.headers, json=data, stream=True)
-        print("core-ai | thinking...")
-
-        with open("output.txt", "a") as write_file:
-            write_file.write("\n\n"+"---------------------"+ "\n\n")
-
-        
-        for chunk in response.iter_content(chunk_size=3000):
-            with open("output.txt", "a") as write_file:
-                content = chunk.decode().strip().split('\n\n')[0]
-                try:
-                    content_split = content.split('data: ')
-                    if len(content_split) > 1:
-                        content_json = json.loads(content_split[1])
-                        write_file.write(content_json["content"])
-                        print(content_json["content"], end='', flush=True)
-                    write_file.flush()  # Save the file after every chunk
-                except json.JSONDecodeError as e:
-                    print(f"JSONDecodeError: {e}")
-        print("\n\n"+"---------------------"+ "\n\n")
