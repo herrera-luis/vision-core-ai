@@ -1,13 +1,9 @@
-
-import subprocess
-import re
 import sys
 import requests
-import base64
-import imageio
 import json
+import re
 
-
+import imageio
 import pyaudio
 import wave
 import threading
@@ -16,6 +12,7 @@ import whisper
 import pyautogui
 import time
 import warnings
+from video_capture import VideoCapture
 
 # Suppress specific warnings from the Whisper library
 warnings.filterwarnings('ignore', message='FP16 is not supported on CPU; using FP32 instead')
@@ -23,61 +20,6 @@ initial_chat_prompt = "This is a conversation between USER and ASSISTANT, a frie
 url = "http://localhost:8080/completion"
 headers = {"Content-Type": "application/json"}
 print("Starting vision-core-ai...")
-
-
-class VideoCapture:
-    def __init__(self) -> None:
-        self.cap = None
-
-    def get_video_devices(self):
-        command = ["ffmpeg", "-f", "avfoundation", "-list_devices", "true", "-i", ""]
-        result = subprocess.run(command, stderr=subprocess.PIPE, text=True)
-        output = result.stderr
-        devices = re.findall(r"\[AVFoundation indev @ .*\]\s\[\d+\]\s(.+)", output)
-        # Filter out non-video devices if necessary
-        video_devices = [device for device in devices if not device.startswith('Capture screen')]
-        
-        return video_devices
-
-    # Function to select a video device
-    def select_video_device(self,devices):
-        print("Available video devices:")
-        for i, device in enumerate(devices):
-            print(f"{i}: {device}")
-        index = int(input("Select the index of the video device: "))
-        if 0 <= index < len(devices):
-            return index
-        else:
-            print("Invalid index selected.")
-            sys.exit(1)
-
-    def capture_image(self, instruction):
-        frame = self.cap.get_next_data()
-        imageio.imsave('temp.png', frame)
-        with open('temp.png', 'rb') as file:
-            encoded_string = base64.b64encode(file.read()).decode('utf-8')
-        image_data = [{"data": encoded_string, "id": 12}]
-        data = {"prompt": f"USER:[img-12] {instruction} \nASSISTANT:", "n_predict": -1, "image_data": image_data, "stream": True}
-        response = requests.post(url, headers=headers, json=data, stream=True)
-        print("core-ai | thinking...")
-
-        with open("output.txt", "a") as write_file:
-            write_file.write("\n\n"+"---------------------"+ "\n\n")
-
-        
-        for chunk in response.iter_content(chunk_size=3000):
-            with open("output.txt", "a") as write_file:
-                content = chunk.decode().strip().split('\n\n')[0]
-                try:
-                    content_split = content.split('data: ')
-                    if len(content_split) > 1:
-                        content_json = json.loads(content_split[1])
-                        write_file.write(content_json["content"])
-                        print(content_json["content"], end='', flush=True)
-                    write_file.flush()  # Save the file after every chunk
-                except json.JSONDecodeError as e:
-                    print(f"JSONDecodeError: {e}")
-        print("\n\n"+"---------------------"+ "\n\n")
 
 class AudioRecorder:
     def __init__(self, chunk=1024, sample_format=pyaudio.paInt16, channels=1, fs=44100, filename="output.wav", device_index=None):
@@ -92,7 +34,7 @@ class AudioRecorder:
         self.p = pyaudio.PyAudio()
         self.device_index = device_index  # Store the device index
         self.key_pressed = ""
-        self.video_capture = VideoCapture()
+        self.video_capture = None
 
     def list_devices(self):
         info = self.p.get_host_api_info_by_index(0)
@@ -194,7 +136,7 @@ class AudioRecorder:
 def main():
 
     ########## Video menu ##########
-    video = VideoCapture()
+    video = VideoCapture(url, headers)
     devices = video.get_video_devices()
     if not devices:
         print("No video devices found.")

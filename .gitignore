@@ -2,3 +2,4 @@ venv
 output.wav
 output.txt
 temp.png
+__pycache__
